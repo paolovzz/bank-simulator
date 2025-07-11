@@ -1,0 +1,91 @@
+version: '3.8'
+
+services:
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: kafka
+    ports:
+      - "9092:9092"
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://kafka:29092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_INTERNAL://0.0.0.0:29092
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT_INTERNAL
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    ports:
+      - "8080:8080"
+    depends_on:
+      - kafka
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+
+  mongodb:
+    image: mongo:6.0
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: root
+
+  sim-conto-corrente:
+    build:
+      context: ./sim-conto-corrente
+      dockerfile: src/main/docker/Dockerfile.jvm
+    container_name: sim-conto-corrente
+    ports:
+      - "8081:8080"
+    depends_on:
+      - mongodb
+    environment:
+      QUARKUS_MONGODB_CONNECTION_STRING: mongodb://root:root@mongodb:27017/bank-sim-conto-corrente?authSource=admin
+      QUARKUS_MONGODB_DATABASE: bank-sim-conto-corrente
+      QUARKUS_MONGODB_USERNAME: root
+      QUARKUS_MONGODB_PASSWORD: root
+  monitoraggio-conto-corrente:
+    build:
+      context: ./monitoraggio-conto-corrente
+      dockerfile: src/main/docker/Dockerfile.jvm
+    container_name: monitoraggio-conto-corrente
+    ports:
+      - "8082:8080"
+    depends_on:
+      - mongodb
+    environment:
+      QUARKUS_MONGODB_CONNECTION_STRING: mongodb://root:root@mongodb:27017/monitoraggio-conto-corrente?authSource=admin
+      QUARKUS_MONGODB_DATABASE: monitoraggio-conto-corrente
+      QUARKUS_MONGODB_USERNAME: root
+      QUARKUS_MONGODB_PASSWORD: root
+      
+  dozzle:
+    image: amir20/dozzle:latest
+    container_name: dozzle
+    ports:
+      - "8888:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+volumes:
+  mongodb_data:
