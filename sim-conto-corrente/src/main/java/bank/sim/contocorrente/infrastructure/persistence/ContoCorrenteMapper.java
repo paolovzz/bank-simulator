@@ -6,7 +6,7 @@ import bank.sim.contocorrente.domain.models.aggregates.ContoCorrente;
 import bank.sim.contocorrente.domain.models.vo.CoordinateBancarie;
 import bank.sim.contocorrente.domain.models.vo.DataApertura;
 import bank.sim.contocorrente.domain.models.vo.DataChiusura;
-import bank.sim.contocorrente.domain.models.vo.IdCliente;
+import bank.sim.contocorrente.domain.models.vo.DatiCliente;
 import bank.sim.contocorrente.domain.models.vo.IdContoCorrente;
 import bank.sim.contocorrente.domain.models.vo.SoglieBonifico;
 import bank.sim.contocorrente.infrastructure.persistence.entities.ContoCorrenteEntity;
@@ -31,7 +31,7 @@ public class ContoCorrenteMapper {
         entity.setBic(coordinateBancarie.getBic().getCodice());
         entity.setSogliaBonificoGiornaliera(cc.getSoglieBonifico().getSogliaGiornaliera());
         entity.setSogliaBonificoMensile(cc.getSoglieBonifico().getSogliaMensile());
-        entity.setClientiAssociati(cc.getClientiAssociati().stream().map(idCliente -> idCliente.getId()).collect(Collectors.toSet()));
+        entity.setClientiAssociati(cc.getClientiAssociati());
         return entity;
     }
 
@@ -39,6 +39,6 @@ public class ContoCorrenteMapper {
         if (entity == null) {
             return null;
         }
-        return new ContoCorrente(IdContoCorrente.with(entity.getId()), CoordinateBancarie.with(entity.getNumeroConto(), entity.getIban(), entity.getCab(), entity.getAbi()), SoglieBonifico.with(entity.getSogliaBonificoMensile(), entity.getSogliaBonificoGiornaliera()), DataApertura.with(entity.getDataApertura()), entity.getSaldo(), entity.getDataChiusura() != null ? DataChiusura.with(entity.getDataChiusura()) : null, entity.getClientiAssociati().stream().map(idCliente -> IdCliente.with(idCliente)).collect(Collectors.toSet()));
+        return new ContoCorrente(IdContoCorrente.with(entity.getId()), CoordinateBancarie.with(entity.getNumeroConto(), entity.getIban(), entity.getCab(), entity.getAbi()), SoglieBonifico.with(entity.getSogliaBonificoMensile(), entity.getSogliaBonificoGiornaliera()), DataApertura.with(entity.getDataApertura()), entity.getSaldo(), entity.getDataChiusura() != null ? DataChiusura.with(entity.getDataChiusura()) : null, entity.getClientiAssociati());
     }
 }

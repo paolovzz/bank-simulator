@@ -2,11 +2,11 @@ package bank.sim.contocorrente.adapter.input.rest;
 
 import bank.sim.contocorrente.adapter.input.rest.requests.CreaContoCorrenteReq;
 import bank.sim.contocorrente.application.ports.input.commands.CreaContoCorrenteCmd;
-import bank.sim.contocorrente.domain.models.vo.IdCliente;
+import bank.sim.contocorrente.domain.models.vo.DatiCliente;
 
 public class RestConverter {
     
     public static CreaContoCorrenteCmd toCreaContoCorrenteCmd(CreaContoCorrenteReq req) {
-        return new CreaContoCorrenteCmd(IdCliente.with(req.getIdCliente()));
+        return new CreaContoCorrenteCmd(DatiCliente.with(req.getCodiceCliente(), req.getDataNascita()));
     }
 }

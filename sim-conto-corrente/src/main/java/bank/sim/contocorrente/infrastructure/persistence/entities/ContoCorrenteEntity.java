@@ -5,6 +5,7 @@ import java.util.Set;
 
 import org.bson.codecs.pojo.annotations.BsonId;
 
+import bank.sim.contocorrente.domain.models.vo.DatiCliente;
 import io.quarkus.mongodb.panache.PanacheMongoEntityBase;
 import io.quarkus.mongodb.panache.common.MongoEntity;
 import lombok.AllArgsConstructor;
@@ -33,6 +34,6 @@ public class ContoCorrenteEntity extends PanacheMongoEntityBase {
     private LocalDateTime dataChiusura;
     private int sogliaBonificoGiornaliera;
     private int sogliaBonificoMensile;
-    private Set<String> clientiAssociati;
+    private Set<DatiCliente> clientiAssociati;
     
 }
