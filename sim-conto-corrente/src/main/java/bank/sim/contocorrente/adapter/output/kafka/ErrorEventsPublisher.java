@@ -10,8 +10,7 @@ import org.eclipse.microprofile.reactive.messaging.Message;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import bank.sim.contocorrente.application.ports.output.EventsPublisherPort;
-import bank.sim.contocorrente.domain.models.aggregates.ContoCorrente;
+import bank.sim.contocorrente.application.ports.output.ErrorEventsPublisherPort;
 import bank.sim.contocorrente.domain.models.events.EventPayload;
 import io.smallrye.reactive.messaging.kafka.api.OutgoingKafkaRecordMetadata;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -20,32 +19,14 @@ import lombok.extern.slf4j.Slf4j;
 
 @ApplicationScoped
 @Slf4j
-public class KafkaEventPublisher implements EventsPublisherPort {
+public class ErrorEventsPublisher implements ErrorEventsPublisherPort {
 
     @Inject
     private ObjectMapper mapper;
 
-    @Channel("conto-corrente-notifications")
+    @Channel("conto-corrente-error-notifications")
     Emitter<String> emitter;
 
-    @Override
-    public void publish(ContoCorrente cc) {
-
-        String key = cc.getIdContoCorrente().getId(); 
-        String aggregateName = ContoCorrente.AGGREGATE_NAME;
-        cc.popChanges().stream().forEachOrdered(ev -> {
-            Message<String> message = Message.of(toJsonString(ev))
-            .addMetadata(OutgoingKafkaRecordMetadata.<String>builder()
-                .withKey(key)
-                .withHeaders(new RecordHeaders()
-                    .add("eventType", ev.eventType().getBytes())
-                    .add("aggregateName", aggregateName.getBytes())
-                    .add("eventId", UUID.randomUUID().toString().getBytes()))
-                .build());
-            log.info("Evento inviato: {}", message);
-            emitter.send(message);
-        });
-    }
 
     private String toJsonString(EventPayload event) {
         try {
@@ -53,5 +34,19 @@ public class KafkaEventPublisher implements EventsPublisherPort {
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public void publish(EventPayload event, String aggregateName, String aggregateId) {
+        Message<String> message = Message.of(toJsonString(event))
+            .addMetadata(OutgoingKafkaRecordMetadata.<String>builder()
+                .withKey(aggregateId)
+                .withHeaders(new RecordHeaders()
+                    .add("eventType", event.eventType().getBytes())
+                    .add("aggregateName", aggregateName.getBytes())
+                    .add("eventId", UUID.randomUUID().toString().getBytes()))
+                .build());
+            log.info("Evento inviato: {}", message);
+            emitter.send(message);
     }
 }
