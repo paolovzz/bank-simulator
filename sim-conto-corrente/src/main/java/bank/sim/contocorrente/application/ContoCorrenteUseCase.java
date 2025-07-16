@@ -1,5 +1,6 @@
 package bank.sim.contocorrente.application;
 
+import bank.sim.contocorrente.application.ports.input.commands.ChiudiContoCorrenteCmd;
 import bank.sim.contocorrente.application.ports.input.commands.CreaContoCorrenteCmd;
 import bank.sim.contocorrente.application.ports.output.ContoCorrenteOutputPort;
 import bank.sim.contocorrente.application.ports.output.ErrorEventsPublisherPort;
@@ -36,5 +37,19 @@ public class ContoCorrenteUseCase {
             errorEventsPublisherPort.publish(ex.getPayload(), ex.getAggregateName(), ex.getAggregateId());
         }
         log.info("Comando [creaContoCorrente] terminato...");
+    }
+
+    public void chiudiContoCorrente(ChiudiContoCorrenteCmd cmd) {
+        log.info("Comando [chiudiontoCorrente] in esecuzione...");
+        try {
+            
+            ContoCorrente cc = ccOutputPort.recuperaDaId(cmd.getIdContoCorrente());
+            cc.chiudi(cmd.getCodiceCliente());
+            ccOutputPort.salva(cc);
+        } catch(BusinessRuleException ex) {
+            log.error("Si e' verificato un errore durante l'esecuzione del comando [chiudiontoCorrente]", ex);
+            errorEventsPublisherPort.publish(ex.getPayload(), ex.getAggregateName(), ex.getAggregateId());
+        }
+        log.info("Comando [chiudiontoCorrente] terminato...");
     }
 }

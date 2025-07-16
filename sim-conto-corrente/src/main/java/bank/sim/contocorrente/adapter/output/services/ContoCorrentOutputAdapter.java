@@ -7,6 +7,7 @@ import bank.sim.contocorrente.application.ports.output.ContoCorrenteRepositoryPo
 import bank.sim.contocorrente.application.ports.output.EventsPublisherPort;
 import bank.sim.contocorrente.domain.models.aggregates.ContoCorrente;
 import bank.sim.contocorrente.domain.models.events.EventPayload;
+import bank.sim.contocorrente.domain.models.vo.IdContoCorrente;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import lombok.RequiredArgsConstructor;
@@ -22,8 +23,13 @@ public class ContoCorrentOutputAdapter  implements ContoCorrenteOutputPort{
     public void salva(ContoCorrente cc) {
 
         List<EventPayload> events = cc.popChanges();
-        ccRepo.save(ContoCorrente.AGGREGATE_NAME, cc.getIdContoCorrente(), events);
-        publisherPort.publish(ContoCorrente.AGGREGATE_NAME, cc.getIdContoCorrente().getId(), events);
+        ccRepo.save(cc.getIdContoCorrente(), events);
+        publisherPort.publish(ContoCorrente.AGGREGATE_NAME, cc.getIdContoCorrente().id(), events);
+    }
+
+    @Override
+    public ContoCorrente recuperaDaId(IdContoCorrente idContoCorrente) {
+       return ccRepo.findById(idContoCorrente.id());
     }
     
 }

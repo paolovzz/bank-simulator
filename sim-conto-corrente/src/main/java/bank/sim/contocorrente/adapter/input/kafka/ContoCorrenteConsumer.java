@@ -16,8 +16,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import bank.sim.contocorrente.application.ContoCorrenteUseCase;
+import bank.sim.contocorrente.application.ports.input.commands.ChiudiContoCorrenteCmd;
 import bank.sim.contocorrente.application.ports.input.commands.CreaContoCorrenteCmd;
+import bank.sim.contocorrente.domain.models.vo.CodiceCliente;
 import bank.sim.contocorrente.domain.models.vo.DatiCliente;
+import bank.sim.contocorrente.domain.models.vo.IdContoCorrente;
 import io.smallrye.reactive.messaging.kafka.api.IncomingKafkaRecordMetadata;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -45,15 +48,23 @@ public class ContoCorrenteConsumer {
                 String dataNascitaString = null;
                 try {
                     JsonNode json = mapper.readTree(payload);
-                dataNascitaString = json.get("dataNascita").asText();
+                    dataNascitaString = json.get("dataNascita").asText();
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
                 String codiceCliente = (String) metadata.getKey();
-                app.creaContoCorrente(new CreaContoCorrenteCmd(DatiCliente.with(codiceCliente, LocalDate.parse(dataNascitaString))));
+                app.creaContoCorrente(new CreaContoCorrenteCmd(new DatiCliente(codiceCliente, LocalDate.parse(dataNascitaString))));
         
-            } else if(eventType.equals("ChiusuraCCRichiesta")) {
-
+            } else if(eventType.equals("ChiusuraContoCorrenteRichiesta")) {
+                String idConto = null;
+                 try {
+                    JsonNode json = mapper.readTree(payload);
+                    idConto = json.get("idContoCorrente").asText();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                String codiceCliente = (String) metadata.getKey();
+                app.chiudiContoCorrente(new ChiudiContoCorrenteCmd(new CodiceCliente(codiceCliente), new IdContoCorrente(idConto)));
             } else {
                 log.warn("Evento [{}] non gestito...", eventType);
             }

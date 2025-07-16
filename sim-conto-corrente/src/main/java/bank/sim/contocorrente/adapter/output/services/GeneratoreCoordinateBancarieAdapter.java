@@ -4,7 +4,12 @@ import java.security.SecureRandom;
 
 import org.iban4j.CountryCode;
 
+import bank.sim.contocorrente.domain.models.vo.Abi;
+import bank.sim.contocorrente.domain.models.vo.Bic;
+import bank.sim.contocorrente.domain.models.vo.Cab;
 import bank.sim.contocorrente.domain.models.vo.CoordinateBancarie;
+import bank.sim.contocorrente.domain.models.vo.Iban;
+import bank.sim.contocorrente.domain.models.vo.NumeroConto;
 import bank.sim.contocorrente.domain.ports.GeneratoreCoordinateBancarie;
 import jakarta.enterprise.context.ApplicationScoped;
 
@@ -22,8 +27,8 @@ public class GeneratoreCoordinateBancarieAdapter implements GeneratoreCoordinate
                 .accountNumber(generateIdentificativoConto())
                 .nationalCheckDigit("S")
                 .build();    // Numero conto
-        
-        return CoordinateBancarie.with(iban.getAccountNumber(), iban.toString(), iban.getBranchCode(), iban.getBankCode());
+        Bic bic = new Bic("BNKSIM91");
+        return new CoordinateBancarie(new NumeroConto(iban.getAccountNumber()), new Iban(iban.toString()), bic, new Cab(iban.getBranchCode()), new Abi(iban.getBankCode()));
     }
     private String generateIdentificativoConto() {
         SecureRandom random = new SecureRandom();
