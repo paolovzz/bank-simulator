@@ -30,7 +30,7 @@ public class ContoCorrenteUseCase {
         log.info("Comando [creaContoCorrente] in esecuzione...");
         try {
             ContoCorrente cc = ContoCorrente.apri(generatoreIdService, generatoreCoordinateBancarie, cmd.getDatiCliente());
-            ccOutputPort.salva(cmd.getDatiCliente(), cc);
+            ccOutputPort.salva(cc);
         } catch(BusinessRuleException ex) {
             log.error("Si e' verificato un errore durante l'esecuzione del comando [creaContoCorrente]", ex);
             errorEventsPublisherPort.publish(ex.getPayload(), ex.getAggregateName(), ex.getAggregateId());

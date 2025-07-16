@@ -1,5 +1,6 @@
 package bank.sim.contocorrente.adapter.output.kafka;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.apache.kafka.common.header.internals.RecordHeaders;
@@ -11,7 +12,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import bank.sim.contocorrente.application.ports.output.EventsPublisherPort;
-import bank.sim.contocorrente.domain.models.aggregates.ContoCorrente;
 import bank.sim.contocorrente.domain.models.events.EventPayload;
 import io.smallrye.reactive.messaging.kafka.api.OutgoingKafkaRecordMetadata;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -29,11 +29,10 @@ public class ContoCorrenteEventPublisher implements EventsPublisherPort {
     Emitter<String> emitter;
 
     @Override
-    public void publish(ContoCorrente cc) {
+    public void publish(String aggregateName, String aggregateId, List<EventPayload> events) {
 
-        String key = cc.getIdContoCorrente().getId(); 
-        String aggregateName = ContoCorrente.AGGREGATE_NAME;
-        cc.popChanges().stream().forEachOrdered(ev -> {
+        String key = aggregateId; 
+        events.stream().forEachOrdered(ev -> {
             Message<String> message = Message.of(toJsonString(ev))
             .addMetadata(OutgoingKafkaRecordMetadata.<String>builder()
                 .withKey(key)
