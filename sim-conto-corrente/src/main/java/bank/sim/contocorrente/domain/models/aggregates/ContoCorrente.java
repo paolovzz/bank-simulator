@@ -12,6 +12,7 @@ import bank.sim.contocorrente.domain.exceptions.BusinessRuleException;
 import bank.sim.contocorrente.domain.models.events.AperturaContoCorrenteFallita;
 import bank.sim.contocorrente.domain.models.events.ContoCorrenteAperto;
 import bank.sim.contocorrente.domain.models.events.ContoCorrenteChiuso;
+import bank.sim.contocorrente.domain.models.events.EventApplicator;
 import bank.sim.contocorrente.domain.models.vo.CodiceCliente;
 import bank.sim.contocorrente.domain.models.vo.CoordinateBancarie;
 import bank.sim.contocorrente.domain.models.vo.DataApertura;
@@ -23,13 +24,15 @@ import bank.sim.contocorrente.domain.ports.GeneratoreCoordinateBancarie;
 import bank.sim.contocorrente.domain.services.GeneratoreId;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 
 @Slf4j
 @Getter
 @AllArgsConstructor
-public class ContoCorrente extends AggregateRoot{
+@NoArgsConstructor
+public class ContoCorrente extends AggregateRoot implements EventApplicator{
 
     public static final String AGGREGATE_NAME = "CONTO_CORRENTE";
     private IdContoCorrente idContoCorrente;
@@ -57,7 +60,8 @@ public class ContoCorrente extends AggregateRoot{
         double saldo = 0;
         Set<DatiCliente> clienti = new HashSet<>();
         clienti.add(datiCliente);
-        ContoCorrente cc = new ContoCorrente(idConto, coordinateBancarie, soglieBonifico, dataApertura, saldo, null, clienti);
+        ContoCorrente cc = new ContoCorrente();
+        cc.idContoCorrente = idConto;
         cc.events(ContoCorrenteAperto.with(idConto, datiCliente, coordinateBancarie, soglieBonifico, dataApertura, saldo));
         return cc;
     }
@@ -72,6 +76,16 @@ public class ContoCorrente extends AggregateRoot{
         if( !clientiAssociati.contains(codiceCliente)) {
             throw new AccessoNonAutorizzatoAlContoException(codiceCliente.getCodiceCliente());
         }
+    }
+
+    @Override
+    public void apply(ContoCorrenteAperto event) {
+        this.clientiAssociati.add(event.getDatiCliente());
+        this.coordinateBancarie = event.getCoordinateBancarie();
+        this.dataApertura = event.getDataApertura();
+        this.idContoCorrente = event.getIdContoCorrente();
+        this.saldo = event.getSaldo();
+        this.soglieBonifico = event.getSoglieBonifico();
     }
 }
 

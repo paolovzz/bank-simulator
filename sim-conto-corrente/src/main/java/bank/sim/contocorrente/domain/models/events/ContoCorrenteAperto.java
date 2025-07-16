@@ -11,7 +11,7 @@ import lombok.Value;
 public class ContoCorrenteAperto implements EventPayload {
 
     private IdContoCorrente idContoCorrente;
-    private DatiCliente codiceCliente;
+    private DatiCliente datiCliente;
     private CoordinateBancarie coordinateBancarie;
     private SoglieBonifico soglieBonifico;
     private DataApertura dataApertura;

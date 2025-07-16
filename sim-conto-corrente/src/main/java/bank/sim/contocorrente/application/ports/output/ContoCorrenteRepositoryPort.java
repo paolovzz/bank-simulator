@@ -1,8 +1,11 @@
 package bank.sim.contocorrente.application.ports.output;
 
-import bank.sim.contocorrente.domain.models.aggregates.ContoCorrente;
+import java.util.List;
+
+import bank.sim.contocorrente.domain.models.events.EventPayload;
+import bank.sim.contocorrente.domain.models.vo.IdContoCorrente;
 
 public interface ContoCorrenteRepositoryPort {
     
-    public void save(ContoCorrente cc);
+    public void save(String aggregateName, IdContoCorrente idContoCorrente, List<EventPayload> events);
 }

@@ -1,7 +1,9 @@
 package bank.sim.contocorrente.application.ports.output;
 
-import bank.sim.contocorrente.domain.models.aggregates.ContoCorrente;
+import java.util.List;
+
+import bank.sim.contocorrente.domain.models.events.EventPayload;
 
 public interface EventsPublisherPort {
-    void publish(ContoCorrente cc);
+    void publish(String aggregateName, String aggregateId, List<EventPayload> events);
 }
