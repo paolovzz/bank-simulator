@@ -7,6 +7,6 @@ import bank.sim.contocorrente.domain.models.vo.DatiCliente;
 public class RestConverter {
     
     public static CreaContoCorrenteCmd toCreaContoCorrenteCmd(CreaContoCorrenteReq req) {
-        return new CreaContoCorrenteCmd(DatiCliente.with(req.getCodiceCliente(), req.getDataNascita()));
+        return new CreaContoCorrenteCmd(new DatiCliente(req.getCodiceCliente(), req.getDataNascita()));
     }
 }

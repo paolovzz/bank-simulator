@@ -5,18 +5,15 @@ import bank.sim.contocorrente.domain.models.vo.DataApertura;
 import bank.sim.contocorrente.domain.models.vo.DatiCliente;
 import bank.sim.contocorrente.domain.models.vo.IdContoCorrente;
 import bank.sim.contocorrente.domain.models.vo.SoglieBonifico;
-import lombok.Value;
 
-@Value(staticConstructor = "with")
-public class ContoCorrenteAperto implements EventPayload {
+public record ContoCorrenteAperto(
+        IdContoCorrente idContoCorrente,
+        DatiCliente datiCliente,
+        CoordinateBancarie coordinateBancarie,
+        SoglieBonifico soglieBonifico,
+        DataApertura dataApertura,
+        double saldo) implements EventPayload {
 
-    private IdContoCorrente idContoCorrente;
-    private DatiCliente datiCliente;
-    private CoordinateBancarie coordinateBancarie;
-    private SoglieBonifico soglieBonifico;
-    private DataApertura dataApertura;
-    private double saldo;
-    
     @Override
     public String eventType() {
         return "ContoCorrenteAperto";

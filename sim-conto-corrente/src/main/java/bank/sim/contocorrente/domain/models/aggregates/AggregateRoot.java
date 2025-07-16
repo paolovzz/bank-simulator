@@ -19,5 +19,4 @@ public class AggregateRoot {
     public void events(EventPayload... payloads) {
         this.events.addAll(Arrays.asList(payloads));
     }
-    
 }

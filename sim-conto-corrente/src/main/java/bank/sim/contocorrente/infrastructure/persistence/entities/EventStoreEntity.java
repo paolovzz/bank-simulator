@@ -19,12 +19,12 @@ public class EventStoreEntity extends PanacheMongoEntityBase {
 
     private String aggregateId;
     private String eventType;
-    private EventPayload payload;
+    private String payload;
     private long sequence;
     private Instant timestamp;
 
 
-    public EventStoreEntity(String aggregateId, String eventType, EventPayload payload, long sequence) {
+    public EventStoreEntity(String aggregateId, String eventType, String payload, long sequence) {
         this.aggregateId = aggregateId;
         this.eventType = eventType;
         this.payload = payload;

@@ -4,21 +4,14 @@ import java.time.LocalDateTime;
 
 import bank.sim.contocorrente.domain.exceptions.ValidazioneException;
 import bank.sim.contocorrente.domain.models.enums.CodiceErrore;
-import lombok.Getter;
 
-@Getter
-public class DataChiusura {
+public record DataChiusura(LocalDateTime dataOra) {
 
-    private LocalDateTime dataOra;
 
-    private DataChiusura(LocalDateTime dataOra) {
-        this.dataOra = dataOra;
-    }
-
-    public static DataChiusura with(LocalDateTime dataOra) {
+    public DataChiusura(LocalDateTime dataOra) {
         if (dataOra == null) {
             throw new ValidazioneException(DataChiusura.class.getSimpleName(), CodiceErrore.DATA_APERTURA_NON_PUO_ESSERE_NULL.getCodice());
         }
-        return new DataChiusura(dataOra);
+        this.dataOra = dataOra;
     }
 }

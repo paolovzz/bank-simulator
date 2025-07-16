@@ -10,9 +10,10 @@ import java.util.Set;
 import bank.sim.contocorrente.domain.exceptions.AccessoNonAutorizzatoAlContoException;
 import bank.sim.contocorrente.domain.exceptions.BusinessRuleException;
 import bank.sim.contocorrente.domain.models.events.AperturaContoCorrenteFallita;
+import bank.sim.contocorrente.domain.models.events.ClienteDissociato;
 import bank.sim.contocorrente.domain.models.events.ContoCorrenteAperto;
 import bank.sim.contocorrente.domain.models.events.ContoCorrenteChiuso;
-import bank.sim.contocorrente.domain.models.events.EventApplicator;
+import bank.sim.contocorrente.domain.models.events.EventPayload;
 import bank.sim.contocorrente.domain.models.vo.CodiceCliente;
 import bank.sim.contocorrente.domain.models.vo.CoordinateBancarie;
 import bank.sim.contocorrente.domain.models.vo.DataApertura;
@@ -32,7 +33,7 @@ import lombok.extern.slf4j.Slf4j;
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
-public class ContoCorrente extends AggregateRoot implements EventApplicator{
+public class ContoCorrente extends AggregateRoot {
 
     public static final String AGGREGATE_NAME = "CONTO_CORRENTE";
     private IdContoCorrente idContoCorrente;
@@ -41,51 +42,68 @@ public class ContoCorrente extends AggregateRoot implements EventApplicator{
     private DataApertura dataApertura;
     private double saldo;
     private DataChiusura dataChiusura;
-    private Set<DatiCliente> clientiAssociati;
+    private Set<DatiCliente> clientiAssociati = new HashSet<>();
 
     public static ContoCorrente apri(GeneratoreId generatoreIdService, GeneratoreCoordinateBancarie generatoreCoordinateBancarie, DatiCliente datiCliente) {
         
         LocalDate oggi = LocalDate.now();
-        Period eta = Period.between(datiCliente.getDataNascita(), oggi);
+        Period eta = Period.between(datiCliente.dataNascita(), oggi);
 
         if(eta.getYears() < 18) {
-            String message = String.format("Errore durante l'apertura del conto: Il cliente con codice [%s] deve aver raggiunto la maggiore eta'...",datiCliente.getCodiceCliente());
-            throw new BusinessRuleException(message, AGGREGATE_NAME, null, AperturaContoCorrenteFallita.with(message, CodiceCliente.with(datiCliente.getCodiceCliente())));
+            String message = String.format("Errore durante l'apertura del conto: Il cliente con codice [%s] deve aver raggiunto la maggiore eta'...",datiCliente.codiceCliente());
+            throw new BusinessRuleException(message, AGGREGATE_NAME, null, AperturaContoCorrenteFallita.with(message, new CodiceCliente(datiCliente.codiceCliente())));
         }
         
-        IdContoCorrente idConto = IdContoCorrente.with(generatoreIdService.genera());
+        IdContoCorrente idConto = new IdContoCorrente(generatoreIdService.genera());
         CoordinateBancarie coordinateBancarie = generatoreCoordinateBancarie.genera();
-        SoglieBonifico soglieBonifico = SoglieBonifico.with(5000, 1500);
-        DataApertura dataApertura = DataApertura.with(LocalDateTime.now(ZoneOffset.UTC));
+        SoglieBonifico soglieBonifico = new SoglieBonifico(5000, 1500);
+        DataApertura dataApertura = new DataApertura(LocalDateTime.now(ZoneOffset.UTC));
         double saldo = 0;
-        Set<DatiCliente> clienti = new HashSet<>();
-        clienti.add(datiCliente);
         ContoCorrente cc = new ContoCorrente();
         cc.idContoCorrente = idConto;
-        cc.events(ContoCorrenteAperto.with(idConto, datiCliente, coordinateBancarie, soglieBonifico, dataApertura, saldo));
+        cc.events(new ContoCorrenteAperto(idConto, datiCliente, coordinateBancarie, soglieBonifico, dataApertura, saldo));
         return cc;
     }
 
-    public void chiudi(DatiCliente codiceClienteRichiedente) {
+    public void chiudi(CodiceCliente codiceClienteRichiedente) {
         verificaAccessoCliente(codiceClienteRichiedente);
-        dataChiusura = DataChiusura.with(LocalDateTime.now(ZoneOffset.UTC));
-        events(ContoCorrenteChiuso.with(dataChiusura));
+        dataChiusura = new DataChiusura(LocalDateTime.now(ZoneOffset.UTC));
+        for(DatiCliente datiCliente: clientiAssociati) {
+            events(new ClienteDissociato(new CodiceCliente(datiCliente.codiceCliente())));
+        }
+        events(new ContoCorrenteChiuso(dataChiusura));
     }
 
-    private void verificaAccessoCliente(DatiCliente codiceCliente) {
-        if( !clientiAssociati.contains(codiceCliente)) {
-            throw new AccessoNonAutorizzatoAlContoException(codiceCliente.getCodiceCliente());
+    private void verificaAccessoCliente(CodiceCliente codiceCliente) {
+        if( !clientiAssociati.stream().anyMatch(c -> c.codiceCliente().equals(codiceCliente.codice()))){
+            throw new AccessoNonAutorizzatoAlContoException(codiceCliente.codice());
         }
     }
 
-    @Override
-    public void apply(ContoCorrenteAperto event) {
-        this.clientiAssociati.add(event.getDatiCliente());
-        this.coordinateBancarie = event.getCoordinateBancarie();
-        this.dataApertura = event.getDataApertura();
-        this.idContoCorrente = event.getIdContoCorrente();
-        this.saldo = event.getSaldo();
-        this.soglieBonifico = event.getSoglieBonifico();
+    private void apply(ContoCorrenteAperto event) {
+        this.clientiAssociati.add(event.datiCliente());
+        this.coordinateBancarie = event.coordinateBancarie();
+        this.dataApertura = event.dataApertura();
+        this.idContoCorrente = event.idContoCorrente();
+        this.saldo = event.saldo();
+        this.soglieBonifico = event.soglieBonifico();
+    }
+
+    private void apply(ContoCorrenteChiuso event) {
+        this.dataChiusura = event.dataChiusura();
+    }
+
+    private void apply(ClienteDissociato event) {
+        this.clientiAssociati.removeIf(c -> c.codiceCliente().equals(event.codiceCliente().codice()));
+    }
+
+    public void apply(EventPayload event) {
+        switch (event) {
+            case ContoCorrenteAperto c -> apply((ContoCorrenteAperto)c);
+            case ContoCorrenteChiuso v -> apply((ContoCorrenteChiuso)v);
+            case ClienteDissociato p -> apply((ClienteDissociato)p);
+            default -> throw new IllegalArgumentException("Evento non supportato");
+        }
     }
 }
 
