@@ -2,6 +2,9 @@ package bank.sim.contocorrente.application;
 
 import bank.sim.contocorrente.application.ports.input.commands.ChiudiContoCorrenteCmd;
 import bank.sim.contocorrente.application.ports.input.commands.CreaContoCorrenteCmd;
+import bank.sim.contocorrente.application.ports.input.commands.ImpostaSoglieBonificoCmd;
+import bank.sim.contocorrente.application.ports.input.commands.ValidaRichiestaCointestazioneCmd;
+import bank.sim.contocorrente.application.ports.input.commands.ValutaCointestazioneCmd;
 import bank.sim.contocorrente.application.ports.output.ContoCorrenteOutputPort;
 import bank.sim.contocorrente.application.ports.output.ErrorEventsPublisherPort;
 import bank.sim.contocorrente.domain.exceptions.BusinessRuleException;
@@ -40,16 +43,55 @@ public class ContoCorrenteUseCase {
     }
 
     public void chiudiContoCorrente(ChiudiContoCorrenteCmd cmd) {
-        log.info("Comando [chiudiontoCorrente] in esecuzione...");
+        log.info("Comando [chiudiContoCorrente] in esecuzione...");
         try {
             
             ContoCorrente cc = ccOutputPort.recuperaDaId(cmd.getIdContoCorrente());
             cc.chiudi(cmd.getCodiceCliente());
             ccOutputPort.salva(cc);
         } catch(BusinessRuleException ex) {
-            log.error("Si e' verificato un errore durante l'esecuzione del comando [chiudiontoCorrente]", ex);
+            log.error("Si e' verificato un errore durante l'esecuzione del comando [chiudiContoCorrente]", ex);
             errorEventsPublisherPort.publish(ex.getPayload(), ex.getAggregateName(), ex.getAggregateId());
         }
-        log.info("Comando [chiudiontoCorrente] terminato...");
+        log.info("Comando [chiudiContoCorrente] terminato...");
+    }
+
+    public void validaRichiestaCointestazione(ValidaRichiestaCointestazioneCmd cmd) {
+        log.info("Comando [validaRichiestaCointestazione] in esecuzione...");
+        try {
+            ContoCorrente cc = ccOutputPort.recuperaDaId(cmd.getIdContoCorrente());
+            cc.validaRichiestaCointestazione(cmd.getCodiceClienteRichiedente(), cmd.getNuovoCodiceCliente());
+            ccOutputPort.salva(cc);
+        } catch(BusinessRuleException ex) {
+            log.error("Si e' verificato un errore durante l'esecuzione del comando [validaRichiestaCointestazione]", ex);
+            errorEventsPublisherPort.publish(ex.getPayload(), ex.getAggregateName(), ex.getAggregateId());
+        }
+        log.info("Comando [validaRichiestaCointestazione] terminato...");
+    }
+
+    public void valutaCointestazione(ValutaCointestazioneCmd cmd) {
+        log.info("Comando [valutaCointestazione] in esecuzione...");
+        try {
+            ContoCorrente cc = ccOutputPort.recuperaDaId(cmd.getIdContoCorrente());
+            cc.valutaCointestazione(cmd.getCodiceCliente(), cmd.isConferma());
+            ccOutputPort.salva(cc);
+        } catch(BusinessRuleException ex) {
+            log.error("Si e' verificato un errore durante l'esecuzione del comando [valutaCointestazione]", ex);
+            errorEventsPublisherPort.publish(ex.getPayload(), ex.getAggregateName(), ex.getAggregateId());
+        }
+        log.info("Comando [valutaCointestazione] terminato...");
+    }
+
+    public void impostaSoglieBonifico(ImpostaSoglieBonificoCmd cmd) {
+        log.info("Comando [impostaSoglieBonifico] in esecuzione...");
+        try {
+            ContoCorrente cc = ccOutputPort.recuperaDaId(cmd.getIdContoCorrente());
+            cc.impostaSoglieBonifico(cmd.getCodiceCliente(), cmd.getNuovSoglieBonifico());
+            ccOutputPort.salva(cc);
+        } catch(BusinessRuleException ex) {
+            log.error("Si e' verificato un errore durante l'esecuzione del comando [impostaSoglieBonifico]", ex);
+            errorEventsPublisherPort.publish(ex.getPayload(), ex.getAggregateName(), ex.getAggregateId());
+        }
+        log.info("Comando [impostaSoglieBonifico] terminato...");
     }
 }

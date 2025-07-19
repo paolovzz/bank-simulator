@@ -4,16 +4,22 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Period;
 import java.time.ZoneOffset;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.HashMap;
+import java.util.Map;
 
 import bank.sim.contocorrente.domain.exceptions.AccessoNonAutorizzatoAlContoException;
 import bank.sim.contocorrente.domain.exceptions.BusinessRuleException;
 import bank.sim.contocorrente.domain.models.events.AperturaContoCorrenteFallita;
+import bank.sim.contocorrente.domain.models.events.ChiusuraContoCorrenteFallita;
 import bank.sim.contocorrente.domain.models.events.ClienteDissociato;
+import bank.sim.contocorrente.domain.models.events.CointestazioneConfermata;
+import bank.sim.contocorrente.domain.models.events.CointestazioneRifiutata;
 import bank.sim.contocorrente.domain.models.events.ContoCorrenteAperto;
 import bank.sim.contocorrente.domain.models.events.ContoCorrenteChiuso;
 import bank.sim.contocorrente.domain.models.events.EventPayload;
+import bank.sim.contocorrente.domain.models.events.ImpostazioneSoglieBonificoFallita;
+import bank.sim.contocorrente.domain.models.events.RichiestaCointestazioneValidata;
+import bank.sim.contocorrente.domain.models.events.SoglieBonificoImpostate;
 import bank.sim.contocorrente.domain.models.vo.CodiceCliente;
 import bank.sim.contocorrente.domain.models.vo.CoordinateBancarie;
 import bank.sim.contocorrente.domain.models.vo.DataApertura;
@@ -42,7 +48,7 @@ public class ContoCorrente extends AggregateRoot {
     private DataApertura dataApertura;
     private double saldo;
     private DataChiusura dataChiusura;
-    private Set<DatiCliente> clientiAssociati = new HashSet<>();
+    private Map<CodiceCliente, Boolean> clientiAssociati = new HashMap<>();
 
     public static ContoCorrente apri(GeneratoreId generatoreIdService, GeneratoreCoordinateBancarie generatoreCoordinateBancarie, DatiCliente datiCliente) {
         
@@ -61,27 +67,69 @@ public class ContoCorrente extends AggregateRoot {
         double saldo = 0;
         ContoCorrente cc = new ContoCorrente();
         cc.idContoCorrente = idConto;
-        cc.events(new ContoCorrenteAperto(idConto, datiCliente, coordinateBancarie, soglieBonifico, dataApertura, saldo));
+        cc.events(new ContoCorrenteAperto(idConto, new CodiceCliente(datiCliente.codiceCliente()), coordinateBancarie, soglieBonifico, dataApertura, saldo));
         return cc;
     }
 
     public void chiudi(CodiceCliente codiceClienteRichiedente) {
         verificaAccessoCliente(codiceClienteRichiedente);
+        if(dataApertura != null) {
+            String message = String.format("Errore durante la chiusura del conto [%s]: Il conto risulta gia' chiuso...",idContoCorrente.id());
+            throw new BusinessRuleException(message, AGGREGATE_NAME, idContoCorrente.id(), ChiusuraContoCorrenteFallita.with(message, idContoCorrente));
+        }
         dataChiusura = new DataChiusura(LocalDateTime.now(ZoneOffset.UTC));
-        for(DatiCliente datiCliente: clientiAssociati) {
-            events(new ClienteDissociato(new CodiceCliente(datiCliente.codiceCliente())));
+        for(CodiceCliente codiceCliente: clientiAssociati.keySet()) {
+            events(new ClienteDissociato(new CodiceCliente(codiceCliente.codice())));
         }
         events(new ContoCorrenteChiuso(dataChiusura));
     }
 
     private void verificaAccessoCliente(CodiceCliente codiceCliente) {
-        if( !clientiAssociati.stream().anyMatch(c -> c.codiceCliente().equals(codiceCliente.codice()))){
+        if( !clientiAssociati.keySet().stream().anyMatch(c -> c.codice().equals(codiceCliente.codice()))){
             throw new AccessoNonAutorizzatoAlContoException(codiceCliente.codice());
         }
     }
 
+    public void validaRichiestaCointestazione(CodiceCliente codiceClienteRichiedente, CodiceCliente nuovoCodiceCliente) {
+        verificaAccessoCliente(codiceClienteRichiedente);
+        if(!clientiAssociati.containsKey(nuovoCodiceCliente)) {
+            this.clientiAssociati.put(nuovoCodiceCliente, false);
+        } else {
+            if(clientiAssociati.get(nuovoCodiceCliente)) {
+                throw new RuntimeException(String.format("il cliente [%s] risulta gia' intestario del conto [%s]",nuovoCodiceCliente.codice(), idContoCorrente.id()));
+            } else {
+                throw new RuntimeException(String.format("La richiesta di cointestazione del conto [%s] e' gia stata validata per il cliente [%s]",idContoCorrente.id(), nuovoCodiceCliente.codice()));
+            }
+        }
+        events(new RichiestaCointestazioneValidata(nuovoCodiceCliente));
+    }
+
+    public void valutaCointestazione(CodiceCliente codiceClienteRichiedente, boolean conferma) {
+        if(!clientiAssociati.containsKey(codiceClienteRichiedente)) {
+            throw new RuntimeException(String.format("Nessuna richiesta di cointestazione del conto [%s] e' presente per il cliente [%s]",idContoCorrente.id(), codiceClienteRichiedente.codice()));
+        } 
+        if(Boolean.TRUE.equals(clientiAssociati.get(codiceClienteRichiedente)) ){
+            throw new RuntimeException(String.format("il cliente [%s] risulta gia' intestario del conto [%s]", codiceClienteRichiedente.codice(), idContoCorrente.id()));
+        } else {
+            if(conferma) {
+                events(new CointestazioneConfermata(codiceClienteRichiedente));
+            } else {
+                events(new CointestazioneRifiutata(codiceClienteRichiedente));
+            }
+        }
+    }
+
+    public void impostaSoglieBonifico(CodiceCliente codiceClienteRichiedente, SoglieBonifico nuoveSoglieBonifico) {
+        verificaAccessoCliente(codiceClienteRichiedente);
+        if(nuoveSoglieBonifico.sogliaGiornaliera() > nuoveSoglieBonifico.sogliaMensile()) {
+            String message = String.format("Errore durante l'impostazione delle soglie bonifico per il conto [%s]. Soglie bonifico inconsistenti: SogliaGiornaliera [%s], SogliaMensile [%s]",idContoCorrente.id(), nuoveSoglieBonifico.sogliaGiornaliera(), nuoveSoglieBonifico.sogliaMensile());
+            throw new BusinessRuleException(message, AGGREGATE_NAME, idContoCorrente.id(), ImpostazioneSoglieBonificoFallita.with(message, idContoCorrente));
+        }
+        events(new SoglieBonificoImpostate(nuoveSoglieBonifico));
+    }
+
     private void apply(ContoCorrenteAperto event) {
-        this.clientiAssociati.add(event.datiCliente());
+        this.clientiAssociati.put(event.codiceCliente(), true);
         this.coordinateBancarie = event.coordinateBancarie();
         this.dataApertura = event.dataApertura();
         this.idContoCorrente = event.idContoCorrente();
@@ -92,16 +140,36 @@ public class ContoCorrente extends AggregateRoot {
     private void apply(ContoCorrenteChiuso event) {
         this.dataChiusura = event.dataChiusura();
     }
+    
+    private void apply(RichiestaCointestazioneValidata event) {
+        clientiAssociati.compute(event.codiceCliente(), (key, val) -> false); 
+    }
 
     private void apply(ClienteDissociato event) {
-        this.clientiAssociati.removeIf(c -> c.codiceCliente().equals(event.codiceCliente().codice()));
+        this.clientiAssociati.remove(event.codiceCliente());
+    }
+
+    private void apply(CointestazioneConfermata event) {
+        clientiAssociati.compute(event.codiceCliente(), (key, val) -> true); 
+    }
+
+    private void apply(CointestazioneRifiutata event) {
+        clientiAssociati.remove(event.codiceCliente()); 
+    }
+
+    private void apply(SoglieBonificoImpostate event) {
+        soglieBonifico = event.soglieBonifico();
     }
 
     public void apply(EventPayload event) {
         switch (event) {
-            case ContoCorrenteAperto c -> apply((ContoCorrenteAperto)c);
-            case ContoCorrenteChiuso v -> apply((ContoCorrenteChiuso)v);
-            case ClienteDissociato p -> apply((ClienteDissociato)p);
+            case ContoCorrenteAperto ev -> apply((ContoCorrenteAperto) ev);
+            case ContoCorrenteChiuso ev -> apply((ContoCorrenteChiuso) ev);
+            case ClienteDissociato ev -> apply((ClienteDissociato) ev);
+            case RichiestaCointestazioneValidata ev -> apply((RichiestaCointestazioneValidata) ev);
+            case CointestazioneConfermata ev -> apply((CointestazioneConfermata) ev);
+            case CointestazioneRifiutata ev -> apply((CointestazioneRifiutata) ev);
+            case SoglieBonificoImpostate ev -> apply((SoglieBonificoImpostate) ev);
             default -> throw new IllegalArgumentException("Evento non supportato");
         }
     }
