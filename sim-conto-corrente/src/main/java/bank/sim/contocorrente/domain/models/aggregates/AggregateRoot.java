@@ -6,9 +6,14 @@ import java.util.List;
 
 import bank.sim.contocorrente.domain.models.events.EventPayload;
 
-public class AggregateRoot {
+public abstract class AggregateRoot<T extends Applier> {
 
     private List<EventPayload> events = new ArrayList<>();
+
+    @SuppressWarnings("unchecked")
+    protected T self() {
+        return (T) this;
+    }
 
      public List<EventPayload> popChanges() {
         List<EventPayload> changes = List.copyOf(events);
@@ -17,6 +22,10 @@ public class AggregateRoot {
     }
 
     public void events(EventPayload... payloads) {
-        this.events.addAll(Arrays.asList(payloads));
+        for (EventPayload payload : payloads) {
+            self().apply(payload);       // Applica evento allo stato
+            this.events.add(payload);   // Salva evento nella lista
+        }
     }
+    
 }
