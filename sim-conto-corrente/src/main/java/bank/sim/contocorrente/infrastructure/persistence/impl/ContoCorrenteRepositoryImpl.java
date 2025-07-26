@@ -53,6 +53,11 @@ public class ContoCorrenteRepositoryImpl
                 .map(e -> deserializeEvent((EventStoreEntity) e))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
+
+
+        if(eventPayloads == null || eventPayloads.isEmpty()) {
+            return null;
+        }
         ContoCorrente cc = new ContoCorrente();
         for (EventPayload ev : eventPayloads) {
             cc.apply(ev);

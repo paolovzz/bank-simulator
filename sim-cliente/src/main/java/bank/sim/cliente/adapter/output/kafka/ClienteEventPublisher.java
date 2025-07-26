@@ -11,6 +11,8 @@ import org.eclipse.microprofile.reactive.messaging.Message;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import bank.sim.cliente.adapter.output.kafka.integration_events.converters.IntegrationEventConverter;
+import bank.sim.cliente.adapter.output.kafka.integration_events.converters.IntegrationEventConverterFactory;
 import bank.sim.cliente.application.ports.output.EventsPublisherPort;
 import bank.sim.cliente.domain.models.events.EventPayload;
 import io.smallrye.reactive.messaging.kafka.api.OutgoingKafkaRecordMetadata;
@@ -26,14 +28,19 @@ public class ClienteEventPublisher implements EventsPublisherPort {
     private ObjectMapper mapper;
 
     @Channel("cliente-notifications")
-    Emitter<String> emitter;
+    private Emitter<String> emitter;
+
+    @Inject
+    private IntegrationEventConverterFactory factory;
 
     @Override
     public void publish(String aggregateName, String aggregateId, List<EventPayload> events) {
 
         String key = aggregateId; 
         events.stream().forEachOrdered(ev -> {
-            Message<String> message = Message.of(toJsonString(ev))
+            var converter = factory.getConverter(ev);
+            Object integrationEvent = converter.convert(ev);
+            Message<String> message = Message.of(toJsonString(integrationEvent))
             .addMetadata(OutgoingKafkaRecordMetadata.<String>builder()
                 .withKey(key)
                 .withHeaders(new RecordHeaders()
@@ -46,9 +53,9 @@ public class ClienteEventPublisher implements EventsPublisherPort {
         });
     }
 
-    private String toJsonString(EventPayload event) {
+    private String toJsonString(Object integrationEvent) {
         try {
-            return mapper.writeValueAsString(event);
+            return mapper.writeValueAsString(integrationEvent);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }

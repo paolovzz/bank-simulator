@@ -1,6 +1,7 @@
 package bank.sim.cliente.adapter.input.rest;
 
 import bank.sim.cliente.adapter.input.rest.requests.CreaClienteReq;
+import bank.sim.cliente.adapter.input.rest.requests.RichiediChiusuraContoRequest;
 import bank.sim.cliente.application.ClienteUseCase;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -34,6 +35,15 @@ public class ClienteResource {
     public Response richiediAperturaConto(@PathParam(value = "idCliente") String idCliente) {
         log.info("ENDPOINT RICHIEDI APERTURA CONTO: {}", idCliente);
         clienteUseCase.richiediAperturaConto(RestConverter.toRichiediAperturaContoCmd(idCliente));
+        return Response.status(Response.Status.ACCEPTED).build();
+    }
+
+    @POST
+    @Path("/{idCliente}/richiedi-chiusura-conto")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response richiediChiusuraConto(@PathParam(value = "idCliente") String idCliente, RichiediChiusuraContoRequest request) {
+        log.info("ENDPOINT RICHIEDI CHIUSURA CONTO: {}", idCliente);
+        clienteUseCase.richiediChiusuraConto(RestConverter.toRichiediChiusuraContoCmd(idCliente, request));
         return Response.status(Response.Status.ACCEPTED).build();
     }
 }

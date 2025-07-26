@@ -46,12 +46,17 @@ public class ClienteRepositoryImpl implements PanacheMongoRepository<EventStoreE
 
     @Override
     public Cliente findById(String aggregateId) {
+        
         List<EventPayload> eventPayloads = EventStoreEntity.find("aggregateId = ?1", aggregateId)
                 .stream()
                 .sorted(Comparator.comparingLong(e -> ((EventStoreEntity) e).getSequence()))
                 .map(e -> deserializeEvent((EventStoreEntity) e))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
+        
+        if(eventPayloads == null || eventPayloads.isEmpty()) {
+            return null;
+        }
         Cliente cc = new Cliente();
         for (EventPayload ev : eventPayloads) {
             cc.apply(ev);

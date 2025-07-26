@@ -1,14 +1,17 @@
 package bank.sim.cliente.adapter.input.rest;
 
 import bank.sim.cliente.adapter.input.rest.requests.CreaClienteReq;
+import bank.sim.cliente.adapter.input.rest.requests.RichiediChiusuraContoRequest;
 import bank.sim.cliente.application.ports.input.commands.CreaClienteCmd;
 import bank.sim.cliente.application.ports.input.commands.RichiediAperturaContoCmd;
+import bank.sim.cliente.application.ports.input.commands.RichiediChiusuraContoCmd;
 import bank.sim.cliente.domain.models.vo.CodiceFiscale;
 import bank.sim.cliente.domain.models.vo.CognomeCliente;
 import bank.sim.cliente.domain.models.vo.DataNascita;
 import bank.sim.cliente.domain.models.vo.DatiAnagraficiCliente;
 import bank.sim.cliente.domain.models.vo.Email;
 import bank.sim.cliente.domain.models.vo.IdCliente;
+import bank.sim.cliente.domain.models.vo.IdContoCorrente;
 import bank.sim.cliente.domain.models.vo.NomeCliente;
 import bank.sim.cliente.domain.models.vo.Residenza;
 import bank.sim.cliente.domain.models.vo.Telefono;
@@ -21,5 +24,9 @@ public class RestConverter {
     
     public static RichiediAperturaContoCmd toRichiediAperturaContoCmd(String idCliente) {
         return new RichiediAperturaContoCmd(new IdCliente(idCliente));
+    }
+    
+    public static RichiediChiusuraContoCmd toRichiediChiusuraContoCmd(String idCliente, RichiediChiusuraContoRequest req) {
+        return new RichiediChiusuraContoCmd(new IdCliente(idCliente), new IdContoCorrente(req.getIdContoCorrente()));
     }
 }

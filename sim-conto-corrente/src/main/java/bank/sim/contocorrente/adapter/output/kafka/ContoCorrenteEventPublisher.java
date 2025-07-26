@@ -11,6 +11,7 @@ import org.eclipse.microprofile.reactive.messaging.Message;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import bank.sim.contocorrente.adapter.output.kafka.integration_events.converters.IntegrationEventConverterFactory;
 import bank.sim.contocorrente.application.ports.output.EventsPublisherPort;
 import bank.sim.contocorrente.domain.models.events.EventPayload;
 import io.smallrye.reactive.messaging.kafka.api.OutgoingKafkaRecordMetadata;
@@ -26,14 +27,20 @@ public class ContoCorrenteEventPublisher implements EventsPublisherPort {
     private ObjectMapper mapper;
 
     @Channel("conto-corrente-notifications")
-    Emitter<String> emitter;
+    private Emitter<String> emitter;
+
+    @Inject
+    private IntegrationEventConverterFactory factory;
 
     @Override
     public void publish(String aggregateName, String aggregateId, List<EventPayload> events) {
 
         String key = aggregateId; 
         events.stream().forEachOrdered(ev -> {
-            Message<String> message = Message.of(toJsonString(ev))
+            
+            var converter = factory.getConverter(ev);
+            Object integrationEvent = converter.convert(ev);
+            Message<String> message = Message.of(toJsonString(integrationEvent))
             .addMetadata(OutgoingKafkaRecordMetadata.<String>builder()
                 .withKey(key)
                 .withHeaders(new RecordHeaders()
@@ -46,7 +53,7 @@ public class ContoCorrenteEventPublisher implements EventsPublisherPort {
         });
     }
 
-    private String toJsonString(EventPayload event) {
+    private String toJsonString(Object event) {
         try {
             return mapper.writeValueAsString(event);
         } catch (JsonProcessingException e) {
