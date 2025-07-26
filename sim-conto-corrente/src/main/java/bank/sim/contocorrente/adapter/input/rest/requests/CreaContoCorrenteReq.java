@@ -7,6 +7,6 @@ import lombok.Data;
 @Data
 public class CreaContoCorrenteReq {
     
-    private String codiceCliente;
+    private String idCliente;
     private LocalDate dataNascita;
 }

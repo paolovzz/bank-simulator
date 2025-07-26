@@ -1,0 +1,53 @@
+ # Java
+*.class
+*.jar
+*.war
+*.ear
+*.iml
+
+# Quarkus specific
+/target/
+/.quarkus/
+/.quarkus-bootstrap/
+
+# Maven
+.mvn/
+log/
+!**/src/main/**/log/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# IDEs
+.idea/
+*.iws
+*.ipr
+*.iml
+*.vscode/
+*.sw?
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Test coverage
+coverage/
+*.exec
+jacoco.exec
+jacoco-report/
+
+# Other
+.env
+*.tmp
+*.bak

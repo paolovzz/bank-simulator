@@ -1,8 +1,8 @@
 package bank.sim.contocorrente.domain.models.events;
 
-import bank.sim.contocorrente.domain.models.vo.CodiceCliente;
+import bank.sim.contocorrente.domain.models.vo.IdCliente;
 
-public record CointestazioneConfermata(CodiceCliente codiceCliente) implements EventPayload {
+public record CointestazioneConfermata(IdCliente idCliente) implements EventPayload {
 
     @Override
     public String eventType() {

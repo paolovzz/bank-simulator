@@ -39,7 +39,7 @@ public class ContoCorrenteUseCase {
     public void chiudiContoCorrente(ChiudiContoCorrenteCmd cmd) {
         log.info("Comando [chiudiContoCorrente] in esecuzione...");
         ContoCorrente cc = ccOutputPort.recuperaDaId(cmd.getIdContoCorrente());
-        cc.chiudi(cmd.getCodiceCliente());
+        cc.chiudi(cmd.getIdCliente());
         ccOutputPort.salva(cc);
         log.info("Comando [chiudiContoCorrente] terminato...");
     }
@@ -47,7 +47,7 @@ public class ContoCorrenteUseCase {
     public void validaRichiestaCointestazione(ValidaRichiestaCointestazioneCmd cmd) {
         log.info("Comando [validaRichiestaCointestazione] in esecuzione...");
         ContoCorrente cc = ccOutputPort.recuperaDaId(cmd.getIdContoCorrente());
-        cc.validaRichiestaCointestazione(cmd.getCodiceClienteRichiedente(), cmd.getNuovoCodiceCliente());
+        cc.validaRichiestaCointestazione(cmd.getIdClienteRichiedente(), cmd.getNuovoIdCliente());
         ccOutputPort.salva(cc);
         log.info("Comando [validaRichiestaCointestazione] terminato...");
     }
@@ -55,7 +55,7 @@ public class ContoCorrenteUseCase {
     public void valutaCointestazione(ValutaCointestazioneCmd cmd) {
         log.info("Comando [valutaCointestazione] in esecuzione...");
         ContoCorrente cc = ccOutputPort.recuperaDaId(cmd.getIdContoCorrente());
-        cc.valutaCointestazione(cmd.getCodiceCliente(), cmd.isConferma());
+        cc.valutaCointestazione(cmd.getIdCliente(), cmd.isConferma());
         ccOutputPort.salva(cc);
         log.info("Comando [valutaCointestazione] terminato...");
     }
@@ -63,7 +63,7 @@ public class ContoCorrenteUseCase {
     public void impostaSoglieBonifico(ImpostaSoglieBonificoCmd cmd) {
         log.info("Comando [impostaSoglieBonifico] in esecuzione...");
         ContoCorrente cc = ccOutputPort.recuperaDaId(cmd.getIdContoCorrente());
-        cc.impostaSoglieBonifico(cmd.getCodiceCliente(), cmd.getNuovSoglieBonifico());
+        cc.impostaSoglieBonifico(cmd.getIdCliente(), cmd.getNuovSoglieBonifico());
         ccOutputPort.salva(cc);
         log.info("Comando [impostaSoglieBonifico] terminato...");
     }

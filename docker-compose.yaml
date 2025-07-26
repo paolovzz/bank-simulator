@@ -51,6 +51,20 @@ services:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: root
 
+  sim-cliente:
+    build:
+      context: ./sim-cliente
+      dockerfile: src/main/docker/Dockerfile.jvm
+    container_name: sim-cliente
+    ports:
+      - "8083:8080"
+    depends_on:
+      - mongodb
+    environment:
+      QUARKUS_MONGODB_CONNECTION_STRING: mongodb://root:root@mongodb:27017/bank-sim-cliente?authSource=admin
+      QUARKUS_MONGODB_DATABASE: bank-sim-cliente
+      QUARKUS_MONGODB_USERNAME: root
+      QUARKUS_MONGODB_PASSWORD: root
   sim-conto-corrente:
     build:
       context: ./sim-conto-corrente

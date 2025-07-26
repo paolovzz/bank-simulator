@@ -20,7 +20,7 @@ import bank.sim.contocorrente.application.ports.input.commands.CreaContoCorrente
 import bank.sim.contocorrente.application.ports.input.commands.ImpostaSoglieBonificoCmd;
 import bank.sim.contocorrente.application.ports.input.commands.ValidaRichiestaCointestazioneCmd;
 import bank.sim.contocorrente.application.ports.input.commands.ValutaCointestazioneCmd;
-import bank.sim.contocorrente.domain.models.vo.CodiceCliente;
+import bank.sim.contocorrente.domain.models.vo.IdCliente;
 import bank.sim.contocorrente.domain.models.vo.DatiCliente;
 import bank.sim.contocorrente.domain.models.vo.IdContoCorrente;
 import bank.sim.contocorrente.domain.models.vo.SoglieBonifico;
@@ -31,7 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @ApplicationScoped
 @Slf4j
-public class ContoCorrenteConsumer {
+public class ClienteConsumer {
 
     @Inject
     private ObjectMapper mapper;
@@ -40,7 +40,7 @@ public class ContoCorrenteConsumer {
     private ContoCorrenteUseCase app;
 
     private static final String EVENT_OWNER = "CLIENTE";
-    private static final String EVENT_APERTURA_CONTO_CORRENTE_RICHIESTO = "AperturaContoCorrenteRichiesto";
+    private static final String EVENT_APERTURA_CONTO_CORRENTE_RICHIESTA = "AperturaContoCorrenteRichiesta";
     private static final String EVENT_CHIUSURA_CONTO_CORRENTE_RICHIESTA = "ChiusuraContoCorrenteRichiesta";
     private static final String EVENT_COINTESTAZIONE_CONTO_CORRENTE_RICHIESTA = "CointestazioneContoCorrenteRichiesta";
     private static final String EVENT_VALUTAZIONE_COINTESTAZIONE_AVVIATA = "ValutazioneCointestazioneAvviata";
@@ -56,37 +56,37 @@ public class ContoCorrenteConsumer {
         log.info("INCOMING:\n- EventType => {}\n- AggregateName => {}", eventType, aggregateName);
         if (aggregateName.equals(EVENT_OWNER)) {
             JsonNode json = convertToJsonNode(payload);
-            String codiceClienteRichiedente = (String) metadata.getKey();
-            switch (payload) {
+            String idClienteRichiedente = (String) metadata.getKey();
+            switch (eventType) {
                 
-                case EVENT_APERTURA_CONTO_CORRENTE_RICHIESTO:{
+                case EVENT_APERTURA_CONTO_CORRENTE_RICHIESTA:{
                     String dataNascitaString = json.get("dataNascita").asText();
-                    app.creaContoCorrente( new CreaContoCorrenteCmd(new DatiCliente(codiceClienteRichiedente, LocalDate.parse(dataNascitaString))));
+                    app.creaContoCorrente( new CreaContoCorrenteCmd(new DatiCliente(idClienteRichiedente, LocalDate.parse(dataNascitaString))));
                     break;
                 }
                 case EVENT_CHIUSURA_CONTO_CORRENTE_RICHIESTA:{
                     String idConto = json.get("idContoCorrente").asText();
-                    app.chiudiContoCorrente( new ChiudiContoCorrenteCmd(new CodiceCliente(codiceClienteRichiedente), new IdContoCorrente(idConto)));
+                    app.chiudiContoCorrente( new ChiudiContoCorrenteCmd(new IdCliente(idClienteRichiedente), new IdContoCorrente(idConto)));
                     break;
                 }
                 case EVENT_COINTESTAZIONE_CONTO_CORRENTE_RICHIESTA:{
                     String idConto = json.get("idContoCorrente").asText();
-                    String codiceClienteNuovoIntestatario = json.get("codiceClienteNuovoIntestatario").asText();
-                    app.validaRichiestaCointestazione(new ValidaRichiestaCointestazioneCmd(new CodiceCliente(codiceClienteRichiedente), new CodiceCliente(codiceClienteNuovoIntestatario), new IdContoCorrente(idConto)));
+                    String idClienteNuovoIntestatario = json.get("idClienteNuovoIntestatario").asText();
+                    app.validaRichiestaCointestazione(new ValidaRichiestaCointestazioneCmd(new IdCliente(idClienteRichiedente), new IdCliente(idClienteNuovoIntestatario), new IdContoCorrente(idConto)));
                     break;
                 }
                 case EVENT_VALUTAZIONE_COINTESTAZIONE_AVVIATA:{
                     String idConto = json.get("idContoCorrente").asText();
-                    String codiceClienteNuovoIntestatario = json.get("codiceClienteNuovoIntestatario").asText();
+                    String idClienteNuovoIntestatario = json.get("idClienteNuovoIntestatario").asText();
                     boolean conferma = json.get("conferma").asBoolean();
-                    app.valutaCointestazione(new ValutaCointestazioneCmd(new CodiceCliente(codiceClienteNuovoIntestatario), new IdContoCorrente(idConto), conferma));
+                    app.valutaCointestazione(new ValutaCointestazioneCmd(new IdCliente(idClienteNuovoIntestatario), new IdContoCorrente(idConto), conferma));
                     break;
                 }
                 case EVENT_AGGIORNAMENTO_SOGLIE_BONIFICO_RICHIESTO:{
                     String idConto = json.get("idContoCorrente").asText();
                     int sogliaGiornalieraBonifico = json.get("sogliaGiornalieraBonifico").asInt();
                     int sogliaMensileBonifico = json.get("sogliaMensileBonifico").asInt();
-                    app.impostaSoglieBonifico(new ImpostaSoglieBonificoCmd(new CodiceCliente(codiceClienteRichiedente), new IdContoCorrente(idConto), new SoglieBonifico(sogliaMensileBonifico, sogliaGiornalieraBonifico)));
+                    app.impostaSoglieBonifico(new ImpostaSoglieBonificoCmd(new IdCliente(idClienteRichiedente), new IdContoCorrente(idConto), new SoglieBonifico(sogliaMensileBonifico, sogliaGiornalieraBonifico)));
                     break;
                 }
                 default:
